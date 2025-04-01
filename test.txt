@@ -1,0 +1,60 @@
+name: Load Testing
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  load_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.9'
+
+      - name: Install Dependencies
+        run: pip install locust
+
+      - name: Start Express Server
+        run: |
+          npm install
+          nohup node server.js &  # Start Express app in background
+          sleep 5  # Wait for server to start
+
+      - name: Run Load Tests
+        run: bash run_load_tests.sh
+
+      - name: Stop Server
+        run: pkill node
+
+
+
+
+
+
+
+
+#!/bin/bash
+
+echo "Starting Locust Load Test..."
+
+# Run Locust in headless mode with 10 users and a spawn rate of 2 per second for 1 minute
+locust -f locustfile.py --host=http://localhost:3000 --headless -u 10 -r 2 -t 1m --csv=load_test_result
+
+# Check if Locust test results indicate failure
+if grep -q "FAIL" load_test_result_stats.csv; then
+    echo "Load test failed! Exiting..."
+    exit 1
+else
+    echo "Load test passed!"
+    exit 0
+fi
