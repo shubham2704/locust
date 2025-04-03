@@ -1,0 +1,75 @@
+**JIRA Story: Onboarding Systems and File Delivery via NQ Cloud Delivery Platform**
+
+**Story Title:** Implement System Onboarding and File Delivery in NQ Cloud Delivery Platform
+
+**Story Type:** Feature
+
+**Description:**
+NQ Cloud Delivery Platform is a file delivery facilitator for other systems and applications in our organization. It enables secure file transfers via SFTP/FTP through GoAnywhere to the destination systems. The platform currently supports:
+1. System/Application Onboarding
+2. Sending Files to the Destination
+
+In the future, the platform will also support email-based file delivery.
+
+---
+
+### **Use Case 1: Onboarding System/Application**
+
+**As a** system administrator,
+**I want to** onboard a new system/application via API call,
+**So that** the system can utilize NQ Cloud Delivery Platform for file transfers.
+
+#### **Acceptance Criteria:**
+- A new system should be onboarded via a POST API request with the required details.
+- System details should include:
+  - System name
+  - Template name
+  - Template details:
+    - URI of the API from where the file will be downloaded
+    - File destination details
+- Upon successful API call, a database entry should be created in DynamoDB.
+- The system should be marked as successfully onboarded in the database.
+
+---
+
+### **Use Case 2: Sending File to the Destination**
+
+**As a** system user,
+**I want to** trigger an event for file delivery,
+**So that** the platform processes and delivers the file to the destination securely.
+
+#### **Acceptance Criteria:**
+- A file delivery event should be created in the event bus with the following details:
+  - Object ID (file ID for download API)
+  - Template ID (associated template for delivery)
+  - Trace ID (for tracking file delivery process)
+- The platform should pick up the event and:
+  1. Create a database entry with status "Processing".
+  2. Fetch the file from the specified URI (provided during onboarding).
+  3. Transfer the file to GoAnywhere via SFTP protocol.
+  4. Transfer the file from GoAnywhere to its final destination.
+- Upon successful file transfer:
+  - The event status should be updated to "Completed" in the database.
+- If file transfer fails:
+  - The event status should be updated to "Failed" in the database.
+
+---
+
+### **Technical Notes:**
+- Use DynamoDB for storing system and event details.
+- Implement event-driven architecture using AWS EventBridge.
+- Ensure secure file transfer via SFTP.
+- Implement proper logging and monitoring for tracking file transfers.
+- Future enhancement: Add email-based file delivery support.
+
+---
+
+### **Dependencies:**
+- GoAnywhere SFTP/FTP setup
+- API for fetching files from source systems
+- EventBus integration for event-driven processing
+
+**Priority:** High
+
+**Status:** To Do
+
